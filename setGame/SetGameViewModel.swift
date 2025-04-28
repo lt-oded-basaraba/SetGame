@@ -14,5 +14,8 @@ class SetGameViewModel: ObservableObject {
         model.deck
     }
 
+  func choose(_ card: SetGame.Card) {
+    model.choose(card)
+  }
     // Add game logic functions here that modify model and publish changes.
 }

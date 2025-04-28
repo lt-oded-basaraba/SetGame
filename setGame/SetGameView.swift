@@ -10,20 +10,28 @@ import SwiftUI
 
 struct SetGameView: View {
     @ObservedObject var viewModel: SetGameViewModel
+    @State private var cardsToShow: Int = 12  // initial number of cards to display
 
     var body: some View {
         ZStack {
             Color(.systemBackground) // visible background
             VStack {
+                // Control how many cards to show
+                Stepper("Cards to show: \(cardsToShow)", value: $cardsToShow, in: 1...viewModel.deck.count)
+
                 // Debug check: confirm that deck has cards
                 if viewModel.deck.isEmpty {
                     Text("Deck is empty")
                         .foregroundColor(.red)
                 }
 
-                AspectVGrid(viewModel.deck, aspectRatio: 2/3) { card in
+                // Display only the first cardsToShow cards
+              let cards = Array(viewModel.deck.prefix(cardsToShow))
+                AspectVGrid(cards, aspectRatio: 2/3) { card in
                     CardView(card: card)
                         .padding(4)
+                        .onTapGesture {
+                            viewModel.choose(card)
                 }
             }
             .padding()
@@ -111,7 +119,6 @@ struct Squiggle: Shape {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        let controlOffset = 0.2 * w
         path.move(to: CGPoint(x: 0.1*w, y: 0.5*h))
         path.addCurve(
             to: CGPoint(x: 0.5*w, y: 0.1*h),
