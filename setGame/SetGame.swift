@@ -29,55 +29,63 @@ struct SetGame{
     deck.shuffle()
   }
 
-  var indexOfSelectedCards: [Int]? {
-    var selectedIndexes: [Int]? = nil
-    for index in deck.indices {
-      if deck[index].isSelected {
-        selectedIndexes.append(index)
-      }
-    }
-    return selectedIndexes
+  /// Indices of currently selected cards
+  var indexOfSelectedCards: [Int] {
+    deck.indices.filter { deck[$0].isSelected }
   }
 
   mutating func checkIfSet(selectedCards: [Int], card: Int) {
-    let selectedCardContents = selectedCards.map { deck[$0].content }
-    let currentCardContent = deck[card].content
-    let allCards = selectedCardContents + [currentCardContent]
-    let allNumbers = Set(allCards.map { $0.number })
-    let allSymbols = Set(allCards.map { $0.symbol })
-    let allShadings = Set(allCards.map { $0.shading })
-    let allColors = Set(allCards.map { $0.color })
-    if ((allNumbers.count == 1 || allSymbols.count == 1 || allShadings.count == 1 || allColors.count == 1) ||
-        (allNumbers.count == 3 && allSymbols.count == 3 && allShadings.count == 3 && allColors.count == 3)) {
-      for index in selectedCards {
-        deck[index].isMatched = true
+      let allCards = (selectedCards + [card]).map { deck[$0].content }
+
+      if isSet(allCards) {
+          removeCards(at: selectedCards + [card])
+      } else {
+          deselectCards(at: selectedCards + [card])
       }
-      deck[card].isMatched = true
-      deck[card].isSelected = false
-      for index in selectedCards {
-        deck[index].isSelected = false
-      }
-    } else {
-      for index in selectedCards {
-        deck[index].isSelected = false
-      }
-      deck[card].isSelected = true
-    }
   }
 
+  // Helper to check if 3 cards form a SET
+  private func isSet(_ cards: [CardContent]) -> Bool {
+      guard cards.count == 3 else { return false }
 
+      let numbers = Set(cards.map { $0.number })
+      let symbols = Set(cards.map { $0.symbol })
+      let shadings = Set(cards.map { $0.shading })
+      let colors = Set(cards.map { $0.color })
+
+      return (numbers.count == 1 || numbers.count == 3) &&
+             (symbols.count == 1 || symbols.count == 3) &&
+             (shadings.count == 1 || shadings.count == 3) &&
+             (colors.count == 1 || colors.count == 3)
+  }
+
+  // Helper to remove cards after a successful match
+  private mutating func removeCards(at indices: [Int]) {
+      let sortedIndices = indices.sorted(by: >)
+      for idx in sortedIndices {
+          deck[idx].isSelected = false
+      }
+      for idx in sortedIndices {
+          deck.remove(at: idx)
+      }
+  }
+
+  // Helper to deselect cards after mismatch
+  private mutating func deselectCards(at indices: [Int]) {
+      for idx in indices {
+          deck[idx].isSelected = false
+      }
+  }
+
+  /// Choose a card: toggles selection and checks for a set when two were selected before
   mutating func choose(_ card: Card) {
-    if let index = deck.firstIndex(where: { $0.id == card.id }) {
-      if !deck[index].isMatched && !deck[index].isSelected {
-        deck[index].isSelected = true
-        if let selectedIndexes = indexOfSelectedCards {
-          if selectedIndexes.count == 2 {
-            checkIfSet(selectedCards: selectedIndexes, card: index)
-
-
-
-          }
-        }
+    if let index = deck.firstIndex(where: { $0.id == card.id }), !deck[index].isMatched {
+      let previouslySelected = indexOfSelectedCards
+      // Toggle selection
+      deck[index].isSelected.toggle()
+      // Only proceed to check if this card is now selected and two were selected before
+      if deck[index].isSelected && previouslySelected.count == 2 {
+        checkIfSet(selectedCards: previouslySelected, card: index)
       }
     }
   }

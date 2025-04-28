@@ -10,14 +10,13 @@ import SwiftUI
 
 struct SetGameView: View {
     @ObservedObject var viewModel: SetGameViewModel
-    @State private var cardsToShow: Int = 12  // initial number of cards to display
 
     var body: some View {
         ZStack {
             Color(.systemBackground) // visible background
             VStack {
                 // Control how many cards to show
-                Stepper("Cards to show: \(cardsToShow)", value: $cardsToShow, in: 1...viewModel.deck.count)
+                Stepper("Cards to show: \(viewModel.cardsToShow)", value: $viewModel.cardsToShow, in: 1...viewModel.deck.count)
 
                 // Debug check: confirm that deck has cards
                 if viewModel.deck.isEmpty {
@@ -26,13 +25,17 @@ struct SetGameView: View {
                 }
 
                 // Display only the first cardsToShow cards
-              let cards = Array(viewModel.deck.prefix(cardsToShow))
-                AspectVGrid(cards, aspectRatio: 2/3) { card in
+                AspectVGrid(Array(viewModel.deck.prefix(viewModel.cardsToShow)), aspectRatio: 2/3) { card in
                     CardView(card: card)
                         .padding(4)
-                        .onTapGesture {
-                            viewModel.choose(card)
+                        .onTapGesture { viewModel.choose(card) }
                 }
+                Spacer()
+                Button("New Game") {
+                    viewModel.newGame()
+                }
+                .buttonStyle(.borderedProminent)
+                .padding()
             }
             .padding()
         }
@@ -55,6 +58,11 @@ struct CardView: View {
                 }
             }
             .padding(4)
+            // Highlight selected card with a green border
+            if card.isSelected {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.green, lineWidth: 4)
+            }
         }
         .aspectRatio(2/3, contentMode: .fit)
     }

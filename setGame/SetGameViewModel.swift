@@ -9,13 +9,20 @@ import SwiftUI
 
 class SetGameViewModel: ObservableObject {
     @Published private var model = SetGame()
+    // Number of cards to display in the view
+    @Published var cardsToShow: Int = 12
 
     var deck: [SetGame.Card] {
         model.deck
     }
 
-  func choose(_ card: SetGame.Card) {
-    model.choose(card)
-  }
+    func choose(_ card: SetGame.Card) {
+        model.choose(card)
+    }
+
+    func newGame() {
+        model = SetGame()
+        cardsToShow = 12
+    }
     // Add game logic functions here that modify model and publish changes.
 }
