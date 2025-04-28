@@ -35,7 +35,7 @@ struct SetGame{
   }
 
   mutating func checkIfSet(selectedCards: [Int], card: Int) {
-      let allCards = (selectedCards + [card]).map { deck[$0].content }
+      let allCards = (selectedCards).map { deck[$0].content }
 
       if isSet(allCards) {
           removeCards(at: selectedCards + [card])
@@ -81,12 +81,14 @@ struct SetGame{
   mutating func choose(_ card: Card) {
     if let index = deck.firstIndex(where: { $0.id == card.id }), !deck[index].isMatched {
       let previouslySelected = indexOfSelectedCards
-      // Toggle selection
-      deck[index].isSelected.toggle()
       // Only proceed to check if this card is now selected and two were selected before
-      if deck[index].isSelected && previouslySelected.count == 2 {
+      if !previouslySelected.contains(index) {
+        deck[index].isSelected.toggle()
+      }
+      if previouslySelected.count == 3 {
         checkIfSet(selectedCards: previouslySelected, card: index)
       }
+    }
     }
   }
 

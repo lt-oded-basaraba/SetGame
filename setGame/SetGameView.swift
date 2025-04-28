@@ -16,7 +16,7 @@ struct SetGameView: View {
             Color(.systemBackground) // visible background
             VStack {
                 // Control how many cards to show
-                Stepper("Cards to show: \(viewModel.cardsToShow)", value: $viewModel.cardsToShow, in: 1...viewModel.deck.count)
+                Stepper("Cards to show: \(viewModel.cardsToShow)", value: $viewModel.cardsToShow, in: 3...viewModel.deck.count, step: 3)
 
                 // Debug check: confirm that deck has cards
                 if viewModel.deck.isEmpty {
@@ -24,8 +24,8 @@ struct SetGameView: View {
                         .foregroundColor(.red)
                 }
 
-                // Display only the first cardsToShow cards
-                AspectVGrid(Array(viewModel.deck.prefix(viewModel.cardsToShow)), aspectRatio: 2/3) { card in
+                // Display only the first cardsToShow cards, excluding matched cards
+                AspectVGrid(Array(viewModel.deck.prefix(viewModel.cardsToShow).filter { !$0.isMatched }), aspectRatio: 2/3) { card in
                     CardView(card: card)
                         .padding(4)
                         .onTapGesture { viewModel.choose(card) }
@@ -62,6 +62,11 @@ struct CardView: View {
             if card.isSelected {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color.green, lineWidth: 4)
+            }
+            // Show a red border for matched cards
+            if card.isMatched {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.red, lineWidth: 4)
             }
         }
         .aspectRatio(2/3, contentMode: .fit)
