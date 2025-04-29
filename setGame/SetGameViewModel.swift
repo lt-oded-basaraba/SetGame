@@ -16,9 +16,9 @@ class SetGameViewModel: ObservableObject {
         model.deck
     }
 
-  var NumberOfCardsInPlay: Int {
-    model.NumberOfCardsInPlay
-  }
+    var NumberOfCardsInPlay: Int {
+        model.NumberOfCardsInPlay
+    }
 
     func choose(_ card: SetGame.Card) {
         model.choose(card)
@@ -30,8 +30,21 @@ class SetGameViewModel: ObservableObject {
     }
 
     func addThreeCards() {
-      model.addThreeCards()
+        model.addThreeCards()
+    }
 
-  }
+    func dealThreeMoreCards() {
+        let selected = model.indexOfSelectedCards
+        if selected.count == 3 && model.isSet(selected.map { model.deck[$0].content }) {
+            model.checkIfSet(selectedCards: selected, card: selected[0])
+        } else {
+            model.addThreeCards()
+        }
+    }
+
+    var canDealMoreCards: Bool {
+        model.deck.filter { !$0.isOnTable }.count >= 3
+    }
+
     // Add game logic functions here that modify model and publish changes.
 }

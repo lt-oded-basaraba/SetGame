@@ -49,7 +49,7 @@ struct SetGame{
   }
 
   // Helper to check if 3 cards form a SET
-  private func isSet(_ cards: [CardContent]) -> Bool {
+  func isSet(_ cards: [CardContent]) -> Bool {
     guard cards.count == 3 else { return false }
 
     let numbers = Set(cards.map { $0.number })

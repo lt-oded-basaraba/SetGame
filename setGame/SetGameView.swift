@@ -17,9 +17,9 @@ struct SetGameView: View {
             VStack {
               HStack {
                 Button("Deal 3 more cards") {
-                  viewModel.addThreeCards()
-
+                  viewModel.dealThreeMoreCards()
                 }
+                .disabled(!viewModel.canDealMoreCards)
                 Spacer()
                 Text("Cards on Table: \(viewModel.NumberOfCardsInPlay)")
               }
