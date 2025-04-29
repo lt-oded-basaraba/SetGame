@@ -15,8 +15,14 @@ struct SetGameView: View {
         ZStack {
             Color(.systemBackground) // visible background
             VStack {
-                // Control how many cards to show
-                Stepper("Cards to show: \(viewModel.cardsToShow)", value: $viewModel.cardsToShow, in: 3...viewModel.deck.count, step: 3)
+              HStack {
+                Button("Deal 3 more cards") {
+                  viewModel.addThreeCards()
+
+                }
+                Spacer()
+                Text("Cards on Table: \(viewModel.NumberOfCardsInPlay)")
+              }
 
                 // Debug check: confirm that deck has cards
                 if viewModel.deck.isEmpty {
@@ -25,7 +31,7 @@ struct SetGameView: View {
                 }
 
                 // Display only the first cardsToShow cards, excluding matched cards
-                AspectVGrid(Array(viewModel.deck.prefix(viewModel.cardsToShow).filter { !$0.isMatched }), aspectRatio: 2/3) { card in
+              AspectVGrid(Array(viewModel.deck.prefix(viewModel.NumberOfCardsInPlay).filter { !$0.isMatched }), aspectRatio: 2/3) { card in
                     CardView(card: card)
                         .padding(4)
                         .onTapGesture { viewModel.choose(card) }

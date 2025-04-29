@@ -16,6 +16,10 @@ class SetGameViewModel: ObservableObject {
         model.deck
     }
 
+  var NumberOfCardsInPlay: Int {
+    model.NumberOfCardsInPlay
+  }
+
     func choose(_ card: SetGame.Card) {
         model.choose(card)
     }
@@ -24,5 +28,10 @@ class SetGameViewModel: ObservableObject {
         model = SetGame()
         cardsToShow = 12
     }
+
+    func addThreeCards() {
+      model.addThreeCards()
+
+  }
     // Add game logic functions here that modify model and publish changes.
 }
