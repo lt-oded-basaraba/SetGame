@@ -56,7 +56,7 @@ enum CardColor: Int, CaseIterable, CustomStringConvertible {
     }
 }
 
-struct CardContent: Equatable, CustomStringConvertible, Hashable {
+struct CardContent: Equatable, CustomStringConvertible {
     var number: CardNumber
     var symbol: CardSymbol
     var shading: CardShading

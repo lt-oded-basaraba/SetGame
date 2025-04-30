@@ -9,15 +9,11 @@ import Foundation
 
 
 struct SetGame{
-  private(set) var deck: [Card] = []
-  private var CardsInPlay: Set<Card> = []
-  var NumberOfCardsInPlay: Int{
-    CardsInPlay.count
-  }
-
-  private(set) var firstFreeCard = 12
+  private(set) var deck: [Card]
+   var NumberOfCardsInPlay: Int = 12
 
   init() {
+    deck = []
     for number in CardNumber.allCases {
       for symbol in CardSymbol.allCases {
         for shading in CardShading.allCases {
@@ -29,9 +25,10 @@ struct SetGame{
         }
       }
     }
+    NumberOfCardsInPlay = 12
     deck.shuffle()
-    for index in 0..<12 {
-      CardsInPlay.insert(deck[index])
+    for index in 0..<NumberOfCardsInPlay {
+      deck[index].isOnTable = true
     }
   }
 
@@ -70,17 +67,10 @@ struct SetGame{
   private mutating func removeCards(at indices: [Int], _ card: Int) {
     let sortedIndices = indices.sorted(by: >)
     for idx in 0..<3 {
-//      if let index = deck.firstIndex(where : {$0.isOnTable == false})
-//      {
-//          deck[index].isOnTable = true
-//          deck[sortedIndices[idx]] = deck[index]
-//      }
-      if( firstFreeCard < 81)
+      if let index = deck.firstIndex(where : {$0.isOnTable == false})
       {
-        CardsInPlay
-        deck[sortedIndices[idx]] = deck[firstFreeCard]
-        firstFreeCard += 1
-
+          deck[index].isOnTable = true
+          deck[sortedIndices[idx]] = deck[index]
       }
       else {
         deck.remove(at: sortedIndices[idx])
@@ -118,11 +108,10 @@ struct SetGame{
 
   mutating func addThreeCards() {
     for _ in 0..<3 {
-      if( firstFreeCard < 81)
+      if let index = deck.firstIndex(where : {$0.isOnTable == false})
       {
-        deck[firstFreeCard].isOnTable = true
-        CardsInPlay.insert(deck[firstFreeCard])
-        firstFreeCard += 1
+        deck[index].isOnTable = true
+        NumberOfCardsInPlay += 1
       }
     }
   }
@@ -131,11 +120,12 @@ struct SetGame{
 
 
 
-  struct Card: Identifiable, Equatable, CustomStringConvertible, Hashable {
+  struct Card: Identifiable, Equatable, CustomStringConvertible {
     var id: String
     var content: CardContent
     var isMatched: Bool = false
     var isSelected: Bool = false
+    var isOnTable: Bool = false
     var description: String {
       return "\(content) \(isMatched ? "Matched" : "Not Matched") \(isSelected ? "Selected" : "Not Selected")"
     }
