@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct SetGameView: View {
+  @Namespace private var cardFlyNamespace
   @ObservedObject var viewModel: SetGameViewModel
 
   var body: some View {
@@ -45,6 +46,7 @@ struct SetGameView: View {
                     CardView(card: card)
                         .padding(4)
                         .onTapGesture { viewModel.choose(card) }
+                        .matchedGeometryEffect(id: card.id, in: cardFlyNamespace)
                 }
             }
             .padding(.horizontal)
@@ -54,6 +56,7 @@ struct SetGameView: View {
             CardView(card: card)
                 .padding(4)
                 .onTapGesture { viewModel.choose(card) }
+                .matchedGeometryEffect(id: card.id, in: cardFlyNamespace)
         }
     }
   }
@@ -99,9 +102,10 @@ struct SetGameView: View {
           .fill(Color.clear)
           .aspectRatio(2/3, contentMode: .fit)
           .frame(width: 50, height: 75)
-        if let topCard = viewModel.DiscardPile.last {
-          CardView(card: topCard)
+        ForEach(viewModel.DiscardPile.suffix(3), id: \.id) { card in
+          CardView(card: card)
             .frame(width: 50, height: 75)
+            .matchedGeometryEffect(id: card.id, in: cardFlyNamespace)
         }
       }
       // Count below the pile

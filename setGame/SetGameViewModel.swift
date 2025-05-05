@@ -26,9 +26,16 @@ class SetGameViewModel: ObservableObject {
         model.NumberOfCardsInPlay
     }
 
-    func choose(_ card: SetGame.Card) {
-        model.choose(card)
-    }
+  func choose(_ card: SetGame.Card) {
+      let selected = model.indexOfSelectedCards
+      if selected.count == 3 && model.isSet(selected.map { model.displayCards[$0].content }) {
+          withAnimation(.easeInOut(duration: 0.6)) {
+              model.checkIfSet(selectedCards: selected, card: selected[0])
+          }
+      } else {
+          model.choose(card)
+      }
+  }
 
     func newGame() {
         model = SetGame()
@@ -40,7 +47,7 @@ class SetGameViewModel: ObservableObject {
 
     func dealThreeMoreCards() {
         let selected = model.indexOfSelectedCards
-        if selected.count == 3 && model.isSet(selected.map { model.deck[$0].content }) {
+        if selected.count == 3 && model.isSet(selected.map { model.displayCards[$0].content }) {
             model.checkIfSet(selectedCards: selected, card: selected[0])
         } else {
             model.addThreeCards()
