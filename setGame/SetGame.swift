@@ -110,9 +110,9 @@ struct SetGame{
     }
   }
 
-
-
-
+  mutating func shuffleDisplayCards() {
+    displayCards.shuffle()
+  }
 
   struct Card: Identifiable, Equatable, CustomStringConvertible {
     var id: String

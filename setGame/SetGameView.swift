@@ -30,13 +30,21 @@ struct SetGameView: View {
         cardGrid
         Spacer()
         pilesView
-        Button("New Game") {
-          viewModel.newGame()
-          dealing.removeAll()
-          discarding.removeAll()
+        HStack {
+            Button("New Game") {
+                viewModel.newGame()
+                dealing.removeAll()
+                discarding.removeAll()
+            }
+            .buttonStyle(.borderedProminent)
+            .padding()
+
+            Button("Shuffle") {
+                viewModel.shuffle()
+            }
+            .buttonStyle(.bordered)
+            .padding()
         }
-        .buttonStyle(.borderedProminent)
-        .padding()
       }
       .padding()
     }

@@ -65,4 +65,10 @@ class SetGameViewModel: ObservableObject {
     func isSetForSelectedIndices(_ indices: [Int]) -> Bool {
         model.isSet(indices.map { model.displayCards[$0].content })
     }
+
+    func shuffle() {
+        withAnimation(.easeInOut) {
+            model.shuffleDisplayCards()
+        }
+    }
 }
