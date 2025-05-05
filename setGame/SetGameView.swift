@@ -9,45 +9,114 @@
 import SwiftUI
 
 struct SetGameView: View {
-    @ObservedObject var viewModel: SetGameViewModel
+  @ObservedObject var viewModel: SetGameViewModel
 
-    var body: some View {
-        ZStack {
-            Color(.systemBackground) // visible background
-            VStack {
-              HStack {
-                Button("Deal 3 more cards") {
-                  viewModel.dealThreeMoreCards()
-                }
-                .disabled(!viewModel.canDealMoreCards)
-                Spacer()
-                Text("Cards on Table: \(viewModel.NumberOfCardsInPlay)")
-              }
+  var body: some View {
+    ZStack {
+      Color(.systemBackground) // visible background
+      VStack {
+        // Debug check: confirm that deck has cards
+        if viewModel.deck.isEmpty {
+          Text("Deck is empty")
+            .foregroundColor(.red)
+        }
 
-                // Debug check: confirm that deck has cards
-                if viewModel.deck.isEmpty {
-                    Text("Deck is empty")
-                        .foregroundColor(.red)
-                }
+        // Display all cards in play (displayCards), excluding matched cards
+        cardGrid
+        Spacer()
+        pilesView
+        Button("New Game") {
+          viewModel.newGame()
+        }
+        .buttonStyle(.borderedProminent)
+        .padding()
+      }
+      .padding()
+    }
+  }
 
-                // Display only the first cardsToShow cards, excluding matched cards
-              AspectVGrid(Array(viewModel.deck.prefix(viewModel.NumberOfCardsInPlay).filter { !$0.isMatched }), aspectRatio: 2/3) { card in
+  @ViewBuilder
+  private var cardGrid: some View {
+    let cards = viewModel.displayCards.filter { !$0.isMatched }
+    if cards.count > 45 {
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 5), spacing: 4) {
+                ForEach(cards, id: \.id) { card in
                     CardView(card: card)
                         .padding(4)
                         .onTapGesture { viewModel.choose(card) }
                 }
-                Spacer()
-                Button("New Game") {
-                    viewModel.newGame()
-                }
-                .buttonStyle(.borderedProminent)
-                .padding()
             }
-            .padding()
+            .padding(.horizontal)
+        }
+    } else {
+        AspectVGrid(cards, aspectRatio: 2/3) { card in
+            CardView(card: card)
+                .padding(4)
+                .onTapGesture { viewModel.choose(card) }
         }
     }
-}
+  }
 
+  private var pilesView : some View {
+    HStack(alignment: .top) {
+      deck
+      Spacer()
+      discardPile
+    }
+  }
+
+  private var deck: some View {
+    VStack(spacing: 4) {
+      ZStack {
+        RoundedRectangle(cornerRadius: 10)
+          .fill(Color.gray)
+          .aspectRatio(2/3, contentMode: .fit)
+          .frame(width: 50, height: 75)
+        Text("\(viewModel.deck.count)")
+          .foregroundColor(.white)
+          .bold()
+      }
+      .overlay(
+        Text("Deck")
+          .font(.caption)
+          .foregroundColor(.gray)
+          .offset(y: 45)
+      )
+      .onTapGesture {
+        if viewModel.canDealMoreCards {
+          viewModel.dealThreeMoreCards()
+        }
+      }
+    }
+  }
+  
+
+  private var discardPile: some View {
+    VStack(spacing: 2) {
+      ZStack {
+        RoundedRectangle(cornerRadius: 10)
+          .fill(Color.clear)
+          .aspectRatio(2/3, contentMode: .fit)
+          .frame(width: 50, height: 75)
+        if let topCard = viewModel.DiscardPile.last {
+          CardView(card: topCard)
+            .frame(width: 50, height: 75)
+        }
+      }
+      // Count below the pile
+      if viewModel.DiscardPile.count > 0 {
+        Text("\(viewModel.DiscardPile.count)")
+          .foregroundColor(.red)
+          .bold()
+      }
+      // Label below the pile
+      Text("Discard Pile")
+        .font(.caption)
+        .foregroundColor(.gray)
+    }
+  }
+}
 struct CardView: View {
     var card: SetGame.Card
 

@@ -10,6 +10,8 @@ import Foundation
 
 struct SetGame{
   private(set) var deck: [Card]
+  private(set) var displayCards: [Card] = []
+  private(set) var discardedCards: [Card] = []
    var NumberOfCardsInPlay: Int = 12
 
   init() {
@@ -27,24 +29,24 @@ struct SetGame{
     }
     NumberOfCardsInPlay = 12
     deck.shuffle()
-    for index in 0..<NumberOfCardsInPlay {
-      deck[index].isOnTable = true
+    for _ in 0..<NumberOfCardsInPlay {
+      displayCards.append(deck.removeFirst())
     }
   }
 
   /// Indices of currently selected cards
   var indexOfSelectedCards: [Int] {
-    deck.indices.filter { deck[$0].isSelected }
+    displayCards.indices.filter { displayCards[$0].isSelected }
   }
 
   mutating func checkIfSet(selectedCards: [Int], card: Int) {
-    let allCards = (selectedCards).map { deck[$0].content }
+    let allCards = (selectedCards).map { displayCards[$0].content }
 
     if isSet(allCards) {
       removeCards(at: selectedCards, card)
     } else {
       deselectCards(at: selectedCards)
-      deck[card].isSelected.toggle()
+      displayCards[card].isSelected.toggle()
     }
   }
 
@@ -67,36 +69,29 @@ struct SetGame{
   private mutating func removeCards(at indices: [Int], _ card: Int) {
     let sortedIndices = indices.sorted(by: >)
     for idx in 0..<3 {
-      if let index = deck.firstIndex(where : {$0.isOnTable == false})
-      {
-          deck[index].isOnTable = true
-          deck[sortedIndices[idx]] = deck[index]
-      }
-      else {
-        deck.remove(at: sortedIndices[idx])
-      }
+      discardedCards.append(displayCards.remove(at:sortedIndices[idx]))
     }
     if !indices.contains(card) {
-      deck[card].isSelected.toggle()
+      displayCards[card].isSelected.toggle()
     }
   }
 
   // Helper to deselect cards after mismatch
   private mutating func deselectCards(at indices: [Int]) {
       for idx in indices {
-          deck[idx].isSelected = false
+        displayCards[idx].isSelected = false
       }
   }
 
   /// Choose a card: toggles selection and checks for a set when two were selected before
   mutating func choose(_ card: Card) {
-    if let index = deck.firstIndex(where: { $0.id == card.id }), !deck[index].isMatched {
+    if let index = displayCards.firstIndex(where: { $0.id == card.id }), !displayCards[index].isMatched {
       let previouslySelected = indexOfSelectedCards
       
       // Toggle the card's selection if we have less than 3 cards selected
       // or if this card wasn't previously selected
       if previouslySelected.count < 3 || previouslySelected.contains(index) {
-          deck[index].isSelected.toggle()
+        displayCards[index].isSelected.toggle()
       }
       
       // Check for set if we now have 3 selected cards
@@ -108,10 +103,9 @@ struct SetGame{
 
   mutating func addThreeCards() {
     for _ in 0..<3 {
-      if let index = deck.firstIndex(where : {$0.isOnTable == false})
+      if !deck.isEmpty
       {
-        deck[index].isOnTable = true
-        NumberOfCardsInPlay += 1
+        displayCards.append(deck.removeFirst())
       }
     }
   }
@@ -125,7 +119,6 @@ struct SetGame{
     var content: CardContent
     var isMatched: Bool = false
     var isSelected: Bool = false
-    var isOnTable: Bool = false
     var description: String {
       return "\(content) \(isMatched ? "Matched" : "Not Matched") \(isSelected ? "Selected" : "Not Selected")"
     }
