@@ -45,14 +45,16 @@ class SetGameViewModel: ObservableObject {
         model.addThreeCards()
     }
 
-    func dealThreeMoreCards() {
-        let selected = model.indexOfSelectedCards
-        if selected.count == 3 && model.isSet(selected.map { model.displayCards[$0].content }) {
-            model.checkIfSet(selectedCards: selected, card: selected[0])
-        } else {
-            model.addThreeCards()
-        }
+  func dealThreeMoreCards() {
+    withAnimation(.easeInOut(duration: 0.6)) {
+      let selected = model.indexOfSelectedCards
+      if selected.count == 3 && model.isSet(selected.map { model.displayCards[$0].content }) {
+        model.checkIfSet(selectedCards: selected, card: selected[0])
+      } else {
+        model.addThreeCards()
+      }
     }
+  }
 
     var canDealMoreCards: Bool {
       !model.deck.isEmpty

@@ -9,8 +9,9 @@
 import SwiftUI
 
 struct SetGameView: View {
-  @Namespace private var cardFlyNamespace
+  @Namespace private var dealingNamespace
   @ObservedObject var viewModel: SetGameViewModel
+  @State private var dealing = Set<SetGame.Card.ID>()
 
   var body: some View {
     ZStack {
@@ -28,6 +29,7 @@ struct SetGameView: View {
         pilesView
         Button("New Game") {
           viewModel.newGame()
+          dealing.removeAll()
         }
         .buttonStyle(.borderedProminent)
         .padding()
@@ -43,21 +45,33 @@ struct SetGameView: View {
         ScrollView {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 5), spacing: 4) {
                 ForEach(cards, id: \.id) { card in
-                    CardView(card: card)
-                        .padding(4)
-                        .onTapGesture { viewModel.choose(card) }
-                        .matchedGeometryEffect(id: card.id, in: cardFlyNamespace)
+                    if !dealing.contains(card.id) {
+                        CardView(card: card)
+                            .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+                            .padding(4)
+                            .onTapGesture { choose(card) }
+                            .transition(.asymmetric(insertion: .identity, removal: .identity))
+                    }
                 }
             }
             .padding(.horizontal)
         }
     } else {
         AspectVGrid(cards, aspectRatio: 2/3) { card in
-            CardView(card: card)
-                .padding(4)
-                .onTapGesture { viewModel.choose(card) }
-                .matchedGeometryEffect(id: card.id, in: cardFlyNamespace)
+            if !dealing.contains(card.id) {
+                CardView(card: card)
+                    .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+                    .padding(4)
+                    .onTapGesture { choose(card) }
+                    .transition(.asymmetric(insertion: .identity, removal: .identity))
+            }
         }
+    }
+  }
+
+  func choose(_ card: SetGame.Card) {
+    withAnimation {
+      viewModel.choose(card)
     }
   }
 
@@ -72,6 +86,12 @@ struct SetGameView: View {
   private var deck: some View {
     VStack(spacing: 4) {
       ZStack {
+        ForEach(viewModel.deck, id: \.id) { card in
+          FaceDownCardView()
+            .frame(width: 50, height: 75)
+            .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+            .transition(.asymmetric(insertion: .identity, removal: .identity))
+        }
         RoundedRectangle(cornerRadius: 10)
           .fill(Color.gray)
           .aspectRatio(2/3, contentMode: .fit)
@@ -88,7 +108,21 @@ struct SetGameView: View {
       )
       .onTapGesture {
         if viewModel.canDealMoreCards {
-          viewModel.dealThreeMoreCards()
+          dealCards()
+        }
+      }
+    }
+  }
+
+  private func dealCards(_ count: Int = 3) {
+    let newCards = viewModel.deck.prefix(count)
+    let newIds = newCards.map { $0.id }
+    dealing.formUnion(newIds)
+    viewModel.addThreeCards()
+    for (i, id) in newIds.enumerated() {
+      DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.15) {
+        withAnimation(.easeInOut(duration: 0.6)) {
+          _ = dealing.remove(id)
         }
       }
     }
@@ -105,7 +139,8 @@ struct SetGameView: View {
         ForEach(viewModel.DiscardPile.suffix(3), id: \.id) { card in
           CardView(card: card)
             .frame(width: 50, height: 75)
-            .matchedGeometryEffect(id: card.id, in: cardFlyNamespace)
+            .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+            .transition(.asymmetric(insertion: .identity, removal: .identity))
         }
       }
       // Count below the pile
@@ -120,6 +155,9 @@ struct SetGameView: View {
         .foregroundColor(.gray)
     }
   }
+
+  @State private var discarded = Set<SetGame.Card.ID>()
+
 }
 struct CardView: View {
     var card: SetGame.Card
@@ -149,6 +187,7 @@ struct CardView: View {
             }
         }
         .aspectRatio(2/3, contentMode: .fit)
+      
     }
 
     @ViewBuilder
@@ -234,6 +273,18 @@ struct Squiggle: Shape {
         )
         path.closeSubpath()
         return path
+    }
+}
+
+struct FaceDownCardView: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.blue)
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white, lineWidth: 2)
+        }
+        .aspectRatio(2/3, contentMode: .fit)
     }
 }
 
