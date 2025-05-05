@@ -13,6 +13,8 @@ struct SetGameView: View {
   @ObservedObject var viewModel: SetGameViewModel
   @State private var dealing = Set<SetGame.Card.ID>()
   @State private var discarding = Set<SetGame.Card.ID>()
+  @State private var matchAnimationIds = Set<SetGame.Card.ID>()
+  @State private var mismatchAnimationIds = Set<SetGame.Card.ID>()
 
   var body: some View {
     ZStack {
@@ -48,7 +50,7 @@ struct SetGameView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 5), spacing: 4) {
                 ForEach(cards, id: \.id) { card in
                     if !dealing.contains(card.id) && !discarding.contains(card.id) {
-                        CardView(card: card)
+                        CardView(card: card, isMatch: matchAnimationIds.contains(card.id), isMismatch: mismatchAnimationIds.contains(card.id))
                             .matchedGeometryEffect(id: card.id, in: dealingNamespace)
                             .padding(4)
                             .onTapGesture { choose(card) }
@@ -66,7 +68,7 @@ struct SetGameView: View {
     } else {
         AspectVGrid(cards, aspectRatio: 2/3) { card in
             if !dealing.contains(card.id) && !discarding.contains(card.id) {
-                CardView(card: card)
+                CardView(card: card, isMatch: matchAnimationIds.contains(card.id), isMismatch: mismatchAnimationIds.contains(card.id))
                     .matchedGeometryEffect(id: card.id, in: dealingNamespace)
                     .padding(4)
                     .onTapGesture { choose(card) }
@@ -82,9 +84,31 @@ struct SetGameView: View {
   }
 
   func choose(_ card: SetGame.Card) {
-    withAnimation {
-      viewModel.choose(card)
+    let selected = viewModel.displayCards.indices.filter { viewModel.displayCards[$0].isSelected }
+    if selected.count == 2, let idx = viewModel.displayCards.firstIndex(where: { $0.id == card.id }) {
+        let newSelected = selected + [idx]
+        let isMatch = viewModel.isSetForSelectedIndices(newSelected)
+        if isMatch {
+            let ids = newSelected.map { viewModel.displayCards[$0].id }
+            matchAnimationIds.formUnion(ids)
+            withAnimation(.easeInOut(duration: 0.3)) {}
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                matchAnimationIds.subtract(ids)
+                viewModel.choose(card)
+            }
+            return
+        } else {
+            let ids = newSelected.map { viewModel.displayCards[$0].id }
+            mismatchAnimationIds.formUnion(ids)
+            withAnimation(.default) {}
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                mismatchAnimationIds.subtract(ids)
+                viewModel.choose(card)
+            }
+            return
+        }
     }
+    withAnimation { viewModel.choose(card) }
   }
 
   private var pilesView : some View {
@@ -195,6 +219,8 @@ struct SetGameView: View {
 }
 struct CardView: View {
     var card: SetGame.Card
+    var isMatch: Bool = false
+    var isMismatch: Bool = false
 
     var body: some View {
         ZStack {
@@ -209,19 +235,21 @@ struct CardView: View {
                 }
             }
             .padding(4)
-            // Highlight selected card with a green border
             if card.isSelected {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color.green, lineWidth: 4)
             }
-            // Show a red border for matched cards
             if card.isMatched {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color.red, lineWidth: 4)
             }
         }
         .aspectRatio(2/3, contentMode: .fit)
-      
+        .scaleEffect(isMatch ? 1.15 : 1)
+        .background(isMatch ? Color.green.opacity(0.3) : (isMismatch ? Color.red.opacity(0.3) : Color.clear))
+        .modifier(ShakeEffect(shakes: isMismatch ? 2 : 0))
+        .animation(.easeInOut(duration: 0.3), value: isMatch)
+        .animation(.default, value: isMismatch)
     }
 
     @ViewBuilder
@@ -319,6 +347,17 @@ struct FaceDownCardView: View {
                 .stroke(Color.white, lineWidth: 2)
         }
         .aspectRatio(2/3, contentMode: .fit)
+    }
+}
+
+struct ShakeEffect: GeometryEffect {
+    var shakes: CGFloat = 0
+    var animatableData: CGFloat {
+        get { shakes }
+        set { shakes = newValue }
+    }
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX: 10 * sin(shakes * .pi * 2), y: 0))
     }
 }
 
