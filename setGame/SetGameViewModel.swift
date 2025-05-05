@@ -61,4 +61,8 @@ class SetGameViewModel: ObservableObject {
     }
 
     // Add game logic functions here that modify model and publish changes.
+
+    func isSetForSelectedIndices(_ indices: [Int]) -> Bool {
+        model.isSet(indices.map { model.displayCards[$0].content })
+    }
 }

@@ -12,6 +12,7 @@ struct SetGameView: View {
   @Namespace private var dealingNamespace
   @ObservedObject var viewModel: SetGameViewModel
   @State private var dealing = Set<SetGame.Card.ID>()
+  @State private var discarding = Set<SetGame.Card.ID>()
 
   var body: some View {
     ZStack {
@@ -30,6 +31,7 @@ struct SetGameView: View {
         Button("New Game") {
           viewModel.newGame()
           dealing.removeAll()
+          discarding.removeAll()
         }
         .buttonStyle(.borderedProminent)
         .padding()
@@ -45,11 +47,16 @@ struct SetGameView: View {
         ScrollView {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 5), spacing: 4) {
                 ForEach(cards, id: \.id) { card in
-                    if !dealing.contains(card.id) {
+                    if !dealing.contains(card.id) && !discarding.contains(card.id) {
                         CardView(card: card)
                             .matchedGeometryEffect(id: card.id, in: dealingNamespace)
                             .padding(4)
                             .onTapGesture { choose(card) }
+                            .transition(.asymmetric(insertion: .identity, removal: .identity))
+                    } else if discarding.contains(card.id) {
+                        CardView(card: card)
+                            .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+                            .padding(4)
                             .transition(.asymmetric(insertion: .identity, removal: .identity))
                     }
                 }
@@ -58,11 +65,16 @@ struct SetGameView: View {
         }
     } else {
         AspectVGrid(cards, aspectRatio: 2/3) { card in
-            if !dealing.contains(card.id) {
+            if !dealing.contains(card.id) && !discarding.contains(card.id) {
                 CardView(card: card)
                     .matchedGeometryEffect(id: card.id, in: dealingNamespace)
                     .padding(4)
                     .onTapGesture { choose(card) }
+                    .transition(.asymmetric(insertion: .identity, removal: .identity))
+            } else if discarding.contains(card.id) {
+                CardView(card: card)
+                    .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+                    .padding(4)
                     .transition(.asymmetric(insertion: .identity, removal: .identity))
             }
         }
@@ -107,11 +119,28 @@ struct SetGameView: View {
           .offset(y: 45)
       )
       .onTapGesture {
-        if viewModel.canDealMoreCards {
-          dealCards()
-        }
+        handleDeckTap()
       }
     }
+  }
+
+  private func handleDeckTap() {
+    let selected = viewModel.displayCards.indices.filter { viewModel.displayCards[$0].isSelected }
+    if selected.count == 3 && viewModel.displayCards.count > selected.max()! {
+      let isSet = viewModel.isSetForSelectedIndices(selected)
+      if isSet {
+        let discardingIds = selected.map { viewModel.displayCards[$0].id }
+        discarding.formUnion(discardingIds)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+          withAnimation(.easeInOut(duration: 0.6)) {
+            discarding.subtract(discardingIds)
+            viewModel.dealThreeMoreCards()
+          }
+        }
+        return
+      }
+    }
+    dealCards()
   }
 
   private func dealCards(_ count: Int = 3) {
@@ -137,10 +166,17 @@ struct SetGameView: View {
           .aspectRatio(2/3, contentMode: .fit)
           .frame(width: 50, height: 75)
         ForEach(viewModel.DiscardPile.suffix(3), id: \.id) { card in
-          CardView(card: card)
-            .frame(width: 50, height: 75)
-            .matchedGeometryEffect(id: card.id, in: dealingNamespace)
-            .transition(.asymmetric(insertion: .identity, removal: .identity))
+          if discarding.contains(card.id) {
+            CardView(card: card)
+              .frame(width: 50, height: 75)
+              .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+              .transition(.asymmetric(insertion: .identity, removal: .identity))
+          } else {
+            CardView(card: card)
+              .frame(width: 50, height: 75)
+              .matchedGeometryEffect(id: card.id, in: dealingNamespace)
+              .transition(.asymmetric(insertion: .identity, removal: .identity))
+          }
         }
       }
       // Count below the pile
@@ -155,8 +191,6 @@ struct SetGameView: View {
         .foregroundColor(.gray)
     }
   }
-
-  @State private var discarded = Set<SetGame.Card.ID>()
 
 }
 struct CardView: View {
